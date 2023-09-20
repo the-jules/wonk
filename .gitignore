@@ -2,3 +2,5 @@
 .coverage
 dist/
 __pycache__
+.idea/
+.DS_Store
