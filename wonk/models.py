@@ -61,18 +61,21 @@ class Statement:
             try:
                 loaded_value = json.loads(value)
                 if isinstance(loaded_value, dict):
-                    value = loaded_value
+                    return loaded_value
             except json.decoder.JSONDecodeError:
                 pass
 
         # Handle list of dicts that were json.dumped
-        elif isinstance(value, set) or isinstance(value, list):
-            try:
-                loaded_value = [json.loads(item) for item in value]
-                if all(isinstance(item, dict) for item in loaded_value):
-                    value = loaded_value
-            except json.decoder.JSONDecodeError:
-                pass
+        elif isinstance(value, list):
+            new_value = []
+            for item in value:
+                try:
+                    new_item = json.loads(item)
+                    new_value.append(new_item)
+                except json.decoder.JSONDecodeError:
+                    new_value.append(item)
+
+            return new_value
 
         return value
 
@@ -394,8 +397,14 @@ def to_set(value: Union[str, List[str]]) -> Set[str]:
         return {value}
     elif isinstance(value, dict):
         return {json.dumps(value)}
-    elif isinstance(value, list) and all(isinstance(item, dict) for item in value):
-        return {json.dumps(item) for item in value}
+    elif isinstance(value, list) and any(isinstance(item, dict) for item in value):
+        new_value = []
+        for item in value:
+            if isinstance(item, dict):
+                new_value.append(json.dumps(item))
+            else:
+                new_value.append(item)
+        return set(new_value)
     return set(value)
 
 
