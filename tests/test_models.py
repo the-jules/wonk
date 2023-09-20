@@ -42,6 +42,18 @@ STATEMENT_DENY_NOTRESOURCE = {
     "NotResource": "some_resource",
 }
 
+STATEMENT_DICT_RESOURCE = {
+    "Action": {"SVC:Action1", "SVC:Action2", "SVC:Action3", "SVC:Action4", "SVC:Action4"},
+    "Effect": "Allow",
+    "Resource": {"Fn::Sub": "*"}
+}
+
+STATEMENT_UNHASHABLE_RESOURCE = {
+    "Action": {"SVC:Action1", "SVC:Action2", "SVC:Action3", "SVC:Action4", "SVC:Action4"},
+    "Effect": "Allow",
+    "Resource": [{"Fn::Sub": "*"}]
+}
+
 
 def test_collect_wildcard_matches_removes_dupes():
     """Duplicate actions are removed."""
@@ -137,6 +149,53 @@ def test_canonicalize_resources_wildcards():
             "arn:bc",
         }
     ) == ["arn:a*", "arn:ba*", "arn:bb", "arn:bc", "arn:something*"]
+
+
+def test_value_to_set():
+    assert models.value_to_set(
+        STATEMENT_SIMPLE,
+        "Action"
+    ) == set(STATEMENT_SIMPLE["Action"])
+
+    assert models.value_to_set(
+        STATEMENT_SIMPLE,
+        "Resource"
+    ) == set(STATEMENT_SIMPLE["Resource"])
+
+    assert models.value_to_set(
+        STATEMENT_SIMPLE,
+        "Not Found"
+    ) == set()
+
+    assert models.value_to_set(
+        STATEMENT_NOTACTION,
+        "NotAction"
+    ) == set(STATEMENT_NOTACTION["NotAction"])
+
+    assert models.value_to_set(
+        STATEMENT_NOTACTION,
+        "Resource"
+    ) == set(STATEMENT_NOTACTION["Resource"])
+
+    assert models.value_to_set(
+        STATEMENT_DENY_NOTRESOURCE,
+        "NotAction"
+    ) == set(STATEMENT_DENY_NOTRESOURCE["NotAction"])
+
+    assert models.value_to_set(
+        STATEMENT_DENY_NOTRESOURCE,
+        "NotResource"
+    ) == {STATEMENT_DENY_NOTRESOURCE["NotResource"]}
+
+    assert models.value_to_set(
+        STATEMENT_DICT_RESOURCE,
+        "Resource"
+    ) == {json.dumps(STATEMENT_DICT_RESOURCE["Resource"])}
+
+    assert models.value_to_set(
+        STATEMENT_UNHASHABLE_RESOURCE,
+        "Resource"
+    ) == {json.dumps(item) for item in STATEMENT_UNHASHABLE_RESOURCE["Resource"]}
 
 
 @pytest.mark.parametrize(

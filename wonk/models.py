@@ -54,7 +54,27 @@ class Statement:
     def resource_value(self):
         """Return the value of the statement's Resource or NotResource key."""
 
-        return canonicalize_resources(value_to_set(self.statement, self.resource_key))
+        value = canonicalize_resources(value_to_set(self.statement, self.resource_key))
+
+        # Handle dicts that were json.dumped
+        if isinstance(value, str):
+            try:
+                loaded_value = json.loads(value)
+                if isinstance(loaded_value, dict):
+                    value = loaded_value
+            except json.decoder.JSONDecodeError:
+                pass
+
+        # Handle list of dicts that were json.dumped
+        elif isinstance(value, set) or isinstance(value, list):
+            try:
+                loaded_value = [json.loads(item) for item in value]
+                if all(isinstance(item, dict) for item in loaded_value):
+                    value = loaded_value
+            except json.decoder.JSONDecodeError:
+                pass
+
+        return value
 
     @property
     def rest(self):
@@ -372,6 +392,10 @@ def to_set(value: Union[str, List[str]]) -> Set[str]:
 
     if isinstance(value, str):
         return {value}
+    elif isinstance(value, dict):
+        return {json.dumps(value)}
+    elif isinstance(value, list) and all(isinstance(item, dict) for item in value):
+        return {json.dumps(item) for item in value}
     return set(value)
 
 
