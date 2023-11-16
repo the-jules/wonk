@@ -184,8 +184,8 @@ def write_policy_set(output_dir: pathlib.Path, base_name: str, policies: List[Po
         for candidate in output_dir.glob(f"{base_name}_*")
         if pattern.match(candidate.stem)
     }
-    if len(cleanup) > 10:
-        # Wonk only creates at most 10 policies for a policy set. If we've found more than 10
+    if len(cleanup) > 20:
+        # Wonk only creates at most 20 policies for a policy set. If we've found more than 20
         # matches then something's gone awry, like the policy set is "*" or such. Either way, pull
         # the plug and refuse to delete them.
         raise exceptions.TooManyPoliciesError(base_name, len(cleanup))

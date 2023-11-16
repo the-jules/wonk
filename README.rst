@@ -22,7 +22,7 @@ AWS has `IAM quotas`_ like:
 
 * Policies may not be more than 6,144 characters long.
 * You can't attach more than 10 groups or roles to a user.
-* You can't attach more than 10 policies to a single group, role, or user.
+* You can't attach more than 20 policies to a single group, role, or user.
 * If you're logging into AWS with SSO, each user like gets exactly 1 role assigned to them.
 
 What if your backend engineers log in with Okta and they need **11** policies to do their job?
@@ -182,15 +182,15 @@ Wonk does whatever it can to make a policy fit within that magic 6,144 character
 
 * Try to make everything fit.
 * If there are any statements with so many actions that they can't be shrunk into the size limit, split them up into equal-size chunks that do fit.
-* Now we have the case of fitting **M** statements into **N** policies, of which there can't be more than 10 because of the AWS limits. That looks a lot like the `knapsack problem`_, and indeed it is. Wonk uses Google's `SCIP constraint solver`_ to pack all of the statements into as few policies as possible.
+* Now we have the case of fitting **M** statements into **N** policies, of which there can't be more than 20 because of the AWS limits. That looks a lot like the `knapsack problem`_, and indeed it is. Wonk uses Google's `SCIP constraint solver`_ to pack all of the statements into as few policies as possible.
 * If **none** of this is sufficient, Wonk raises an exception and quits.
 
 Policy sets
 -----------
 
-The end result of many Wonk operations is a collection of files, a **policy set**, named ``<base>_1.json`` through ``<base>_N.json`` where N <= 10. This is different from most utilities which operate on individual files, but Wonk can't know how many files it will be creating in advance.
+The end result of many Wonk operations is a collection of files, a **policy set**, named ``<base>_1.json`` through ``<base>_N.json`` where N <= 20. This is different from most utilities which operate on individual files, but Wonk can't know how many files it will be creating in advance.
 
-Why 10? Because AWS usually won't allow you to attach more than 10 policies to a user, group, or role. Since policy sets work together like one giant policy and can't be split up, Wonk won't create a policy set that can't actually be attached to anything. If you're bumping up against this limit, consider creating 2 policy sets and applying them to 2 distinct but related groups (like ``Backend_1`` and ``Backend_2``), then putting each relevant user into both groups. Alternatively, if your policies cover 99 actions like ``Service:OnePermission`` and ``Service:Another`` on a service that only has 100 possible actions, and you've done your due diligence and don't mind giving your users access to that 100th action, consider adding a ``Service:*`` action to a local policy. That will replace all those individual actions with the single wildcard. Likewise, if you mean to give your users access to all of the various ``Service:GetThis`` and ``Service:GetThat`` actions, you can cover them all at once with ``Service:Get*``. This also has the nice side effect of documenting that you actually intend to allow access to all of the ``Get*`` actions.
+Why 20? Because AWS usually won't allow you to attach more than 20 policies to a user, group, or role. Since policy sets work together like one giant policy and can't be split up, Wonk won't create a policy set that can't actually be attached to anything. If you're bumping up against this limit, consider creating 2 policy sets and applying them to 2 distinct but related groups (like ``Backend_1`` and ``Backend_2``), then putting each relevant user into both groups. Alternatively, if your policies cover 99 actions like ``Service:OnePermission`` and ``Service:Another`` on a service that only has 100 possible actions, and you've done your due diligence and don't mind giving your users access to that 100th action, consider adding a ``Service:*`` action to a local policy. That will replace all those individual actions with the single wildcard. Likewise, if you mean to give your users access to all of the various ``Service:GetThis`` and ``Service:GetThat`` actions, you can cover them all at once with ``Service:Get*``. This also has the nice side effect of documenting that you actually intend to allow access to all of the ``Get*`` actions.
 
 Terraforming combined policies
 ==============================
