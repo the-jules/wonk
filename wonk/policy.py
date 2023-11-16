@@ -127,7 +127,7 @@ def combine(policies: List[Policy]) -> List[Policy]:
             packed_list.append(smallest_json(statement_dict))
 
     try:
-        statement_sets = optimizer.pack_statements(packed_list, max_statement_size, 10)
+        statement_sets = optimizer.pack_statements(packed_list, max_statement_size, 20)
 
     except UnpackableStatementsError:
         # We may hit in exception if a single statement's list of resources is too long,
@@ -142,7 +142,7 @@ def combine(policies: List[Policy]) -> List[Policy]:
             for statement_dict in statement.split_resource(max_statement_size):
                 packed_list.append(smallest_json(statement_dict))
 
-        statement_sets = optimizer.pack_statements(packed_list, max_statement_size, 10)
+        statement_sets = optimizer.pack_statements(packed_list, max_statement_size, 20)
 
     policies = []
     for statement_set in statement_sets:
