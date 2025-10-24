@@ -11,8 +11,8 @@ from wonk.models import Policy, Statement
 def test_write_policy_set_doesnt_run_amok(tmp_path):
     """write_policy_set won't wipe your hard drive."""
 
-    # Create test files 0..11.
-    for i in range(12):
+    # Create test files 0..21.
+    for i in range(22):
         (tmp_path / f"foo_{i}.json").write_text("fnord")
 
     with pytest.raises(exceptions.TooManyPoliciesError) as exc:
@@ -28,7 +28,7 @@ def test_write_policy_set_doesnt_run_amok(tmp_path):
         )
 
     assert exc.value.policy_set == "foo"
-    assert exc.value.policies == 12
+    assert exc.value.policies == 22
 
 
 def test_write_policy_leaves_expected_results(tmp_path):
