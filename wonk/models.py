@@ -236,7 +236,10 @@ class Statement:
         for base in range(0, len(self.resource_value), chunk_size):
             sub_statement = copy.deepcopy(self.rest)
             sub_statement[self.action_key] = list(self.action_value)
-            sub_statement[self.resource_key] = self.resource_value[base : base + chunk_size]  # noqa: E203
+            if isinstance(self.resource_value, dict):
+                sub_statement[self.resource_key] = self.resource_value
+            else:
+                sub_statement[self.resource_key] = self.resource_value[base : base + chunk_size]  # noqa: E203
             yield sub_statement
 
 
