@@ -7,7 +7,7 @@ from typing import Dict, List, Tuple
 
 from xdg import xdg_cache_home
 
-from wonk import aws, exceptions
+from wonk import aws, exceptions, optimizer
 from wonk.constants import MAX_MANAGED_POLICY_SIZE
 from wonk.exceptions import UnpackableStatementsError
 from wonk.models import Policy, Statement, canonicalize_resources, smallest_json, to_set
@@ -116,44 +116,36 @@ def combine(policies: List[Policy]) -> List[Policy]:
         MAX_MANAGED_POLICY_SIZE - minimum_possible_policy_size - max_number_of_commas
     )
 
-    split_statements = []
+    packed_list = []
     for statement in new_policy.statements:
+        packed = str(statement)
+        if len(packed) <= max_statement_size:
+            packed_list.append(packed)
+            continue
+
         for statement_dict in statement.split(max_statement_size):
-            split_statements.append(smallest_json(statement_dict))
+            packed_list.append(smallest_json(statement_dict))
 
-    statement_lists = []
-    for statement in split_statements:
-        str_statement = str(statement)
-        for statement_list in statement_lists:
-            if len(str(statement_list)) + len(str_statement) <= max_statement_size:
-                statement_list.append(statement)
-                break
-        else:
-            statement_lists.append([statement])
+    try:
+        statement_sets = optimizer.pack_statements(packed_list, max_statement_size, 20)
 
-    if len(statement_lists) > 20 or any(len(str(statement_list)) > max_statement_size for statement_list in statement_lists):
+    except UnpackableStatementsError:
         # We may hit in exception if a single statement's list of resources is too long,
         # try splitting statement by resource rather than action
-        split_statements = []
+        packed_list = []
         for statement in new_policy.statements:
+            packed = str(statement)
+            if len(packed) <= max_statement_size:
+                packed_list.append(packed)
+                continue
+
             for statement_dict in statement.split_resource(max_statement_size):
-                split_statements.append(smallest_json(statement_dict))
+                packed_list.append(smallest_json(statement_dict))
 
-        statement_lists = []
-        for statement in split_statements:
-            str_statement = str(statement)
-            for statement_list in statement_lists:
-                if len(str(statement_list)) + len(str_statement) <= max_statement_size:
-                    statement_list.append(statement)
-                    break
-            else:
-                statement_lists.append([statement])
-
-    if len(statement_lists) > 20:
-        raise UnpackableStatementsError
+        statement_sets = optimizer.pack_statements(packed_list, max_statement_size, 20)
 
     policies = []
-    for statement_set in statement_lists:
+    for statement_set in statement_sets:
         # The splitting process above might have resulted in this policy having multiple statements
         # that could be merged back together. The easiest way to handle this is to create a new
         # policy as-is, then group its statements together into *another* new, optimized policy,
