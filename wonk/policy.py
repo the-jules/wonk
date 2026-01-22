@@ -131,7 +131,7 @@ def combine(policies: List[Policy]) -> List[Policy]:
         else:
             statement_lists.append([statement])
 
-    if len(statement_lists) > 20 or any(len(str(statement_list)) > max_statement_size for statement_list in statement_lists):
+    if len(statement_lists) > 20 or any(len(str(statement_list)) + minimum_possible_policy_size > MAX_MANAGED_POLICY_SIZE for statement_list in statement_lists):
         # We may hit in exception if a single statement's list of resources is too long,
         # try splitting statement by resource rather than action
         split_statements = []
