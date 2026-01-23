@@ -116,22 +116,35 @@ def combine(policies: List[Policy]) -> List[Policy]:
         MAX_MANAGED_POLICY_SIZE - minimum_possible_policy_size - max_number_of_commas
     )
 
-    split_statements = []
-    for statement in new_policy.statements:
-        for statement_dict in statement.split(max_statement_size):
-            split_statements.append(smallest_json(statement_dict))
-
+    split_by_resource = False
     statement_lists = []
-    for statement in split_statements:
-        str_statement = str(statement)
-        for statement_list in statement_lists:
-            if len(str(statement_list)) + len(str_statement) <= max_statement_size:
-                statement_list.append(statement)
-                break
-        else:
-            statement_lists.append([statement])
+    try:
+        split_statements = []
+        for statement in new_policy.statements:
+            for statement_dict in statement.split(max_statement_size):
+                split_statements.append(smallest_json(statement_dict))
 
-    if len(statement_lists) > 20 or any(len(str(statement_list)) + minimum_possible_policy_size > MAX_MANAGED_POLICY_SIZE for statement_list in statement_lists):
+        for statement in split_statements:
+            str_statement = str(statement)
+            for statement_list in statement_lists:
+                if len(str(statement_list)) + len(str_statement) <= max_statement_size:
+                    statement_list.append(statement)
+                    break
+            else:
+                statement_lists.append([statement])
+
+    except ValueError as e:
+        print(f"Warning: Unable to split by Action: {e}")
+        split_by_resource = True
+
+    split_by_resource = (
+            split_by_resource
+            or len(statement_lists) > 20
+            or any(len(str(statement_list)) + minimum_possible_policy_size > MAX_MANAGED_POLICY_SIZE
+                   for statement_list in statement_lists)
+    )
+
+    if split_by_resource:
         # We may hit in exception if a single statement's list of resources is too long,
         # try splitting statement by resource rather than action
         split_statements = []
