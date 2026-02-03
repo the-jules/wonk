@@ -179,7 +179,7 @@ def test_policy_combine_big_resource():
         version="2012-10-17",
         statements=[Statement({"Action": ["spam"], "NotResource": "b" * b_len})],
     )
-
+#
 
 def test_grouped_actions():
     """Simple statements are grouped as expected, even if their resources are written oddly."""

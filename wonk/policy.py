@@ -121,7 +121,12 @@ def combine(policies: List[Policy]) -> List[Policy]:
     try:
         split_statements = []
         for statement in new_policy.statements:
-            for statement_dict in statement.split(max_statement_size):
+            # If we have a single action and we end up splitting it, we need to split by resource instead
+            statement_split = list(statement.split(max_statement_size))
+            if len(statement.action_value) == 1 and len(statement_split) > 1:
+                split_by_resource = True
+                break
+            for statement_dict in statement_split:
                 split_statements.append(smallest_json(statement_dict))
 
         for statement in split_statements:
