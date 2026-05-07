@@ -179,6 +179,48 @@ def test_policy_combine_big_resource():
         version="2012-10-17",
         statements=[Statement({"Action": ["spam"], "NotResource": "b" * b_len})],
     )
+
+
+def test_policy_combine_big_action_and_resource():
+    """Combining two big policies does as expected."""
+
+    a_len = int(policy.MAX_MANAGED_POLICY_SIZE * 0.4)
+    b_len = int(policy.MAX_MANAGED_POLICY_SIZE * 0.7)
+    c_len = int(policy.MAX_MANAGED_POLICY_SIZE * 0.4)
+
+    old_statements = [
+        Statement({"Action": [char * length], "NotResource": "spam"})
+        for char, length in [("a", a_len), ("b", b_len), ("c", c_len)]
+    ]
+    old_statements.extend([
+        Statement({"Action": "spam", "NotResource": [char * length]})
+        for char, length in [("a", a_len), ("b", b_len), ("c", c_len)]
+    ])
+
+    policies = policy.combine([Policy(statements=old_statements)])
+
+    assert len(policies) == 4
+
+    assert policies[0] == Policy(
+        version="2012-10-17",
+        statements=[Statement({"Action": ["spam"], "NotResource": ["a" * a_len, "c" * c_len]})],
+    )
+
+    assert policies[1] == Policy(
+        version="2012-10-17",
+        statements=[Statement({"Action": ["spam"], "NotResource": "b" * b_len})],
+    )
+
+    assert policies[2] == Policy(
+        version="2012-10-17",
+        statements=[Statement({"Action": ["a" * a_len, "c" * c_len], "NotResource": "spam"})],
+    )
+
+    assert policies[3] == Policy(
+        version="2012-10-17",
+        statements=[Statement({"Action": "b" * b_len, "NotResource": "spam"})],
+    )
+
 #
 
 def test_grouped_actions():
