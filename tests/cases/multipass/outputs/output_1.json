@@ -1,5 +1,5 @@
 {
-    "Id": "fcd8ee21aa42cc033b7144a0d50a9cfb",
+    "Id": "25e5dbcf0158e7df8c03d2d1b665fb56",
     "Version": "2012-10-17",
     "Statement": [
         {
@@ -11,14 +11,14 @@
                 "D"
             ],
             "Resource": [
-                "bar",
-                "baz",
-                "foo",
-                "qux",
                 "R5",
                 "R6",
                 "R7",
-                "R8"
+                "R8",
+                "bar",
+                "baz",
+                "foo",
+                "qux"
             ]
         }
     ]
