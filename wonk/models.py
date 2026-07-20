@@ -338,13 +338,13 @@ def smallest_json(data: dict) -> str:
     return json.dumps(data, sort_keys=True, **JSON_ARGS[-1])
 
 
-def deduped_items(items: Set[str]) -> List[str]:
-    """Return a sorted list of all the unique items in `items`, ignoring case."""
+def deduped_items(items: Set[str], case_sensitive: bool = False) -> List[str]:
+    """Return a sorted list of all the unique items in `items`, ignoring case if case_sensitive is False."""
 
     # First, group all items by their casefolded values. This lumps "foo" and "FOO" together.
     unique: Dict[str, List[str]] = {}
     for item in items:
-        unique.setdefault(item.casefold(), []).append(item)
+        unique.setdefault(item.casefold() if not case_sensitive else item, []).append(item)
 
     # Sort the dictionary by it's casefolded keys, then return the first item in each key's sorted
     # list of values. For instance, if `unique["foo"] == ["fOO", "FOO"]`, then return "FOO" (which
@@ -352,7 +352,7 @@ def deduped_items(items: Set[str]) -> List[str]:
     return [sorted(values)[0] for _, values in sorted(unique.items())]
 
 
-def collect_wildcard_matches(items: Set[str]) -> Union[str, List[str]]:
+def collect_wildcard_matches(items: Set[str], case_sensitive: bool = False) -> Union[str, List[str]]:
     """Return the reduced set of items as either a single string or a sorted list of strings.
 
     This removes wildcard matches from the set. If the set contains both "foo*" and "foobar",
@@ -372,7 +372,7 @@ def collect_wildcard_matches(items: Set[str]) -> Union[str, List[str]]:
         patterns[item.casefold()] = re.compile(rf"^{pattern_string}$", re.IGNORECASE)
 
     new_items = []
-    for item in deduped_items(items):
+    for item in deduped_items(items, case_sensitive):
         # If this item matches any of the patterns (other than itself!), then skip it. If it
         # doesn't, add it to the list of items to keep.
         if not any(
@@ -390,7 +390,7 @@ def canonicalize_resources(resources: Set[str]) -> Union[str, List[str]]:
     if "*" in resources:
         return "*"
 
-    return collect_wildcard_matches(resources)
+    return collect_wildcard_matches(items=resources, case_sensitive=True)
 
 
 def to_set(value: Union[str, List[str]]) -> Set[str]:

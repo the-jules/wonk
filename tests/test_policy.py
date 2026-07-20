@@ -466,3 +466,36 @@ def test_grouped_resources_notactions():
         "Effect": "Allow",
         "Resource": ["bacon", "eggs", "spam"],
     }
+
+
+
+def test_merge_cases():
+    """"""
+
+    policy1 = policy.Statement(
+        {
+            "Sid": "El",
+            "Effect": "Allow",
+            "Resource": ["spam", "Spam", "SPAM"],
+            "Action": ["SVC:Action1", "SVC:Action2"],
+        }
+    )
+
+    policy2 = policy.Statement(
+        {
+            "Sid": "Knee",
+            "Effect": "Allow",
+            "Resource": ["spam", "Spam", "SPAM"],
+            "Action": ["SVC:Action1", "SVC:Action2"],
+        }
+    )
+
+    changed, statements = policy.grouped_resources([policy1, policy2])
+    assert not changed
+    assert len(statements) == 1
+
+    assert statements[0].as_json() == {
+        "Action": ["SVC:Action1", "SVC:Action2"],
+        "Effect": "Allow",
+        "Resource": ["SPAM", "Spam", "spam"],
+    }
